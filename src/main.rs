@@ -1,22 +1,40 @@
 extern crate promise;
 use promise::Promise;
 
-use std::thread;
-use std::time::Duration;
-
 fn main() {
-    println!("1");
+    println!("1. Create Promise");
     let mut promise = Promise::new(|resolve, reject| {
-                                        thread::sleep(Duration::from_millis(100));
-                                        println!("3");
-                                        resolve();
-                                        // reject();
-                                        println!("5");
-                                    });
-    promise.then(|| println!("4 then resolve"), || println!("4 then reject"));
-    promise.catch(|| println!("catch"));
+        println!("3. Resolve resut in new thread");
+        if true {
+            resolve(Some("resolve result".to_string()));
+        } else {
+            reject(None);
+        }
+    });
 
-    println!("2");
+    println!("2. Add then/catch handlers");
+    promise
+        .then(
+            |value| {
+                println!("4. On fulfilled - {:?}", &value);
+                Some("changed result".to_string())
+            },
+            |reason| {
+                println!("4. On rejected - {:?}", &reason);
+                reason
+            }
+        )
+        .then(
+            |value| {
+                println!("5. On fulfilled - {:?}", &value);
+                value
+            },
+            |reason| reason
+        )
+        .catch(|reason| {
+            println!("5. On catched - {:?}", &reason);
+            None
+        });
 
-    thread::sleep(Duration::from_millis(200));
+    std::thread::park_timeout(std::time::Duration::from_millis(10));
 }

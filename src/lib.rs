@@ -1,15 +1,10 @@
-use std::thread;
+use std::{thread, time};
 use std::sync::{Arc, Mutex};
 
-pub enum State {
-    PENDING,
-    FULFILLED,
-    REJECTED,
-}
 
 pub struct Handler {
     pub resolve: bool,
-    pub handler: Box<Fn() + Send>,
+    pub handler: Box<Fn(Option<String>) -> Option<String> + Send>,
 }
 
 pub struct Promise {
@@ -18,24 +13,27 @@ pub struct Promise {
 
 impl Promise {
     pub fn new<F>(executor: F) -> Promise
-        where F: Send + 'static + Fn(&Fn(), &Fn()) {
+        where F: Send + 'static + Fn(&Fn(Option<String>), &Fn(Option<String>)) {
         let handlers = Arc::new(Mutex::new(Some(Vec::new())));
         let handlers_cloned1 = handlers.clone();
         let handlers_cloned2 = handlers.clone();
         thread::spawn(move || {
-            let resolve = move || {
+            thread::park_timeout(time::Duration::from_millis(1));
+            let resolve = move |value| {
+                let mut prev_value: Option<String> = value;
                 for handler in handlers_cloned1.lock().unwrap().take().unwrap().into_iter() {
                     let handler: Handler = handler;
-                    if handler.resolve {
-                        (handler.handler)();
+                    if handler.resolve == true {
+                        prev_value = (handler.handler)(prev_value.clone());
                     }
                 }
             };
-            let reject = move || {
+            let reject = move |reason| {
+                let mut prev_reason: Option<String> = reason;
                 for handler in handlers_cloned2.lock().unwrap().take().unwrap().into_iter() {
                     let handler: Handler = handler;
-                    if !handler.resolve {
-                        (handler.handler)();
+                    if handler.resolve == false {
+                        prev_reason = (handler.handler)(prev_reason.clone());
                     }
                 }
             };
@@ -45,9 +43,9 @@ impl Promise {
         Promise { handlers: handlers }
     }
 
-
     pub fn then<F1, F2>(&mut self, on_fulfilled: F1, on_rejected: F2) -> &mut Promise
-        where F1: Send + 'static + Fn(), F2: Send + 'static + Fn() {
+        where F1: Send + 'static + Fn(Option<String>) -> Option<String>,
+              F2: Send + 'static + Fn(Option<String>) -> Option<String> {
         let handler1 = Handler{ resolve: true, handler: Box::new(on_fulfilled) };
         let handler2 = Handler{ resolve: false, handler: Box::new(on_rejected) };
         self.handlers.lock().unwrap().as_mut().unwrap().push(handler1);
@@ -56,7 +54,7 @@ impl Promise {
     }
 
     pub fn catch<F>(&mut self, on_rejected: F) -> &mut Promise
-        where F: Send + 'static + Fn() {
+        where F: Send + 'static + Fn(Option<String>) -> Option<String> {
         let handler = Handler{ resolve: false, handler: Box::new(on_rejected) };
         self.handlers.lock().unwrap().as_mut().unwrap().push(handler);
         self

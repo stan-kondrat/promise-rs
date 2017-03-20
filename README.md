@@ -12,13 +12,15 @@ extern crate promise;
 use promise::Promise;
 
 fn main() {
-  let mut promise = Promise::new(|resolve| {
+  let mut promise = Promise::new(|resolve, reject| {
     // do something
-    resolve();
+    let result: Option<String> = Some("resolve result".to_string());
+    resolve(result);
   });
 
-  promise.then(|| { /* on fulfilled */ });
-  promise.then(|| { /* on fulfilled */ });
+  promise
+    .then(|value| { /* on fulfilled */ None }, |reason| { /* on rejected */ None })
+    .catch(|reason| { /* on rejected: */ None });
 }
 ```
 
