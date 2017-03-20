@@ -6,8 +6,7 @@ Under the hood, executor spawn new thread at each time when `Promise::new(execut
 
 ## Usage
 
-
-```
+```rust
 extern crate promise;
 use promise::Promise;
 
@@ -27,3 +26,10 @@ fn main() {
 ## Motivation
 
 Best way to begin learning a new language is start write own library. As I came from front-end world, will create yet another Promise library for Rust.
+
+
+## Links
+
+1. [JavaScript Promise Syntax](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
+2. [Zero-cost futures and streams in Rust](https://github.com/alexcrichton/futures-rs)
+3. [Asynchronous promises in rust using threads](https://github.com/bcndanos/asynchronous)
