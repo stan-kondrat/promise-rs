@@ -59,4 +59,40 @@ impl Promise {
         self.handlers.lock().unwrap().as_mut().unwrap().push(handler);
         self
     }
+
+    /// The Promise::resolve(value) method returns a Promise object that is resolved with the given value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use promise::Promise;
+    /// let mut promise = Promise::resolve(Some("resolve result".to_string()));
+    /// promise.then(|value| {
+    ///     println!("value: {:?}", value);
+    ///     None
+    /// }, |x| x);
+    /// ```
+    pub fn resolve(value: Option<String>) -> Promise {
+        Promise::new(move |resolve, _| {
+            resolve(value.clone());
+        })
+    }
+
+    /// The Promise::reject(reason) method returns a Promise object that is rejected with the given reason.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use promise::Promise;
+    /// let mut promise = Promise::reject(Some("reject result".to_string()));
+    /// promise.catch(|reason| {
+    ///     println!("reason: {:?}", reason);
+    ///     None
+    /// });
+    /// ```
+    pub fn reject(reason: Option<String>) -> Promise {
+        Promise::new(move |_, reject| {
+            reject(reason.clone());
+        })
+    }
 }
