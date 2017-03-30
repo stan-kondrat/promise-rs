@@ -1,4 +1,8 @@
-# Rust Promise library
+Rust Promise library
+==========================================================
+
+[![Build Status](https://travis-ci.org/stan-kondrat/promise-rs.svg)](https://travis-ci.org/stan-kondrat/promise-rs)
+[![Crates.io](https://img.shields.io/crates/v/promise-rs.svg)](https://crates.io/crates/promise-rs)
 
 
 Under the hood, executor spawn new thread at each time when `Promise::new(executor)` invoked.
