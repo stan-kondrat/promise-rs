@@ -4,6 +4,7 @@ use promise::Promise;
 fn main() {
     println!("1. Create Promise");
     let mut promise = Promise::new(|resolve, reject| {
+        std::thread::sleep_ms(1000);
         println!("3. Resolve resut in new thread");
         if true {
             resolve(Some("resolve result".to_string()));
@@ -36,5 +37,5 @@ fn main() {
             None
         });
 
-    std::thread::park_timeout(std::time::Duration::from_millis(10));
+    std::thread::sleep_ms(3000);
 }
