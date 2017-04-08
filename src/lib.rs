@@ -1,4 +1,4 @@
-use std::{thread, time};
+use std::thread;
 use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Debug, Clone)]
@@ -17,6 +17,7 @@ pub struct Promise {
     pub value: Arc<Mutex<Option<String>>>,
     pub state: Arc<Mutex<Option<State>>>,
     pub handlers: Arc<Mutex<Option<Vec<Handler>>>>,
+    pub thread: std::thread::JoinHandle<()>,
 }
 
 impl Promise {
@@ -35,7 +36,7 @@ impl Promise {
         let handlers_resolve = handlers.clone();
         let handlers_reject = handlers.clone();
 
-        thread::spawn(move || {
+        let thread = thread::spawn(move || {
             let resolve = move |value| {
                 let mut prev_value: Option<String> = value;
                 for handler in handlers_resolve.lock().unwrap().take().unwrap().into_iter() {
@@ -67,7 +68,7 @@ impl Promise {
             executor(&resolve, &reject);
         });
 
-        Promise { handlers: handlers, state: state, value: result }
+        Promise { handlers: handlers, state: state, value: result, thread:thread }
     }
 
     pub fn then<F1, F2>(&mut self, on_fulfilled: F1, on_rejected: F2) -> &mut Promise
@@ -151,5 +152,63 @@ impl Promise {
         Promise::new(move |_, reject| {
             reject(reason.clone());
         })
+    }
+
+    /// The Promise::all(vec![p1, p2, p3]) method returns a single Promise that
+    /// resolves when all of the promises in the vector argument have resolved,
+    /// or rejects with the reason of the first promise that rejects.
+    /// Resoved results joined with delimeter, by default semicolon;
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use promise::Promise;
+    /// let promise1 = Promise::resolve(Some("resolve 1 result".to_string()));
+    /// let promise2 = Promise::resolve(Some("reject 2 result".to_string()));
+    /// let promise3 = Promise::resolve(Some("resolve 3 result".to_string()));
+    ///
+    /// let promise4 = Promise::new(|resolve, reject| {
+    ///     std::thread::sleep(std::time::Duration::from_millis(10));
+    ///     resolve(Some("resolve 3 result".to_string()));
+    /// });
+    ///
+    /// let mut promise_all = Promise::all(vec![promise1, promise2, promise3, promise4]);
+    ///
+    /// promise_all.then(|value| {
+    ///     println!("promise_all: {:?}", value);
+    ///     None
+    /// }, |_| None );
+    /// ```
+    pub fn all(promises: Vec<Promise>) -> Promise {
+        Promise::all_ex(promises, ";")
+    }
+    pub fn all_ex(promises: Vec<Promise>, delimeter: &str) -> Promise {
+        let mut rejected = false;
+        #[derive(Debug)]
+        // let mut pending_promises_threads: Vec<Arc<Mutex<Option<std::thread::JoinHandle<()>>>>> = vec![];
+        let mut resoved_results: Vec<String> = vec![];
+        let mut first_reject_reason = String::new();
+        for promise in promises.into_iter() {
+            let _ = promise.thread.join();
+            let state = promise.state.lock().unwrap().clone().unwrap();
+            let value = promise.value.lock().unwrap().clone().unwrap_or(String::new());
+            match state {
+                State::FULFILLED => {
+                    resoved_results.push(value);
+                },
+                State::REJECTED => {
+                    rejected = true;
+                    first_reject_reason = value;
+                },
+                State::PENDING => {
+
+                }
+            }
+        }
+        if rejected {
+            return Promise::reject(Some(first_reject_reason));
+        } else {
+            return Promise::resolve(Some(resoved_results.join(delimeter)));
+        }
     }
 }
