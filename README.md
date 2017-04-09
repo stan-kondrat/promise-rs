@@ -7,6 +7,8 @@ Rust Promise library
 
 Under the hood, executor spawn new thread at each time when `Promise::new(executor)` invoked.
 
+Documentation [https://docs.rs/promise-rs](https://docs.rs/promise-rs/)
+
 
 ## Usage
 

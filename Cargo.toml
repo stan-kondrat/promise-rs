@@ -1,9 +1,10 @@
 [package]
 name = "promise-rs"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Stan Kondrat <stan.kondrat@gmail.com>"]
 license = "MIT"
 description = "Rust Promise library"
+documentation = "https://docs.rs/promise-rs"
 repository = "https://github.com/stan-kondrat/promise-rs"
 keywords = ["promise"]
 readme = "README.md"
