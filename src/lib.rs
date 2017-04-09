@@ -118,6 +118,11 @@ impl Promise {
         self
     }
 
+    /// The Promise::await() method is used to wait for a Promise fulfilled.
+    pub fn await(self) {
+        let _ = self.thread.join();
+    }
+
     /// The Promise::resolve(value) method returns a Promise object that is resolved with the given value.
     ///
     /// # Examples
